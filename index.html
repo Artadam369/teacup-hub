@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>$CUP Airdrop</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #0f0d18;
+      color: #99ff99;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      color: #99ff99;
+    }
+
+    p {
+      margin: 1rem 0;
+      font-size: 1rem;
+      color: #cccccc;
+    }
+
+    .button {
+      background-color: #99ff99;
+      color: #0a0a0a;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 10px;
+    }
+
+    .button:hover {
+      background-color: #88dd88;
+    }
+
+    #footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    #userAddress {
+      font-size: 0.9rem;
+      color: #ffffff;
+      word-break: break-all;
+    }
+
+    #welcomeText {
+      font-size: 1.2rem;
+      margin-top: 20px;
+    }
+
+    .small-text {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <img src="images/cup.png" alt="CUP logo" width="64" />
+  <h1>$CUP</h1>
+  <p id="welcomeText">
+    Welcome to the only meme paradise on TEA —<br />
+    sunshine, sand, and a cup of tea that's all yours.
+  </p>
+
+  <button id="connectButton" class="button">Connect Wallet</button>
+  <p id="userAddress"></p>
+  <button id="claimButton" class="button" disabled>Claim 5000 $CUP</button>
+
+  <p style="margin-top: 30px;">
+    CUP CUP CUP<br /><br />
+    CA: 0x68E8ac068B621A88E2f825b97f8093367875093B<br /><br />
+    FOR FREEDOM,<br />
+    DECENTRALIZATION,<br />
+    AND FINANCIAL INDEPENDENCE!
+    <br />
+    <br />
+    <span class="small-text">Since we're on the TEA testnet,<br />if your claim fails, please try a few more times.</span>
+  </p>
+
+  <div id="footer">
+    © 2025 Built with ❤️ by AI
+  </div>
+
+  <script>
+    let web3;
+    let userAccount;
+    const faucetAddress = "0x41C97A8a69E14aE34Efc86f40C29BD80ACB35de7"; // Faucet 合约地址
+    const cupTokenAddress = "0x68E8ac068B621A88E2f825b97f8093367875093B"; // CUP 代币地址
+
+    const faucetAbi = [
+      {
+        "inputs": [],
+        "name": "claim",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "withdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "cupToken",
+        "outputs": [
+          {
+            "internalType": "contract IERC20",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "cupTokenAddress",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "fee",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getBalance",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "rewardAmount",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+
+    window.onload = async () => {
+      if (typeof window.ethereum !== 'undefined') {
+        web3 = new Web3(window.ethereum);
+        document.getElementById("connectButton").addEventListener("click", connectWallet);
+        document.getElementById("claimButton").addEventListener("click", claimCUP);
+      } else {
+        alert("Please install MetaMask to use this app.");
+      }
+    };
+
+    async function connectWallet() {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAccount = accounts[0];
+        document.getElementById("userAddress").innerText = "Connected: " + userAccount;
+        document.getElementById("claimButton").disabled = false;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function claimCUP() {
+      const faucetContract = new web3.eth.Contract(faucetAbi, faucetAddress);
+      try {
+        await faucetContract.methods.claim().send({
+          from: userAccount,
+          value: web3.utils.toWei('5', 'ether') // 根据合约要求支付 5 TEA
+        });
+        alert("Claim successful! You have received 5000 $CUP.");
+      } catch (error) {
+        console.error(error);
+        alert("Claim failed: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
